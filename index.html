@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="for files that Microsoft Edge supports">
+    <title>File Conversion | AVIF to PNG</title>
+</head>
+<body>
+    <input type="file" id="input" accept=".avif">
+    <button id="init">Convert Now!</button>
+    <script src="https://cdn.jsdelivr.net/npm/libavif-js/dist/libavif.js"></script>
+    <script>
+      document.getElementById('init').addEventListener('click', async () => {
+    const input = document.getElementById('input');
+    if (input.files.length === 0) {
+        alert('Please select an AVIF file first.');
+        return;
+    }
+
+    const file = input.files[0];
+    if (file.type !== 'image/avif') {
+        alert('Use a .avif file.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(event) {
+        const avifArrayBuffer = event.target.result;
+        try {
+            const avifModule = await AVIF();
+            const avifData = new Uint8Array(avifArrayBuffer);
+            const rgba = avifModule.decode(avifData);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = rgba.width;
+            canvas.height = rgba.height;
+            const context = canvas.getContext('2d');
+
+            const imageData = new ImageData(new Uint8ClampedArray(rgba.data.buffer), rgba.width, rgba.height);
+            context.putImageData(imageData, 0, 0);
+
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'converted.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        } catch (error) {
+            console.error('Err', error);
+            alert('Failed.');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+});
+    </script>
+</body>
+</html>
